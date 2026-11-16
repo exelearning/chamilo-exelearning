@@ -32,8 +32,7 @@ test.describe.serial('package lifecycle', () => {
 
     const response = await page.request.get(firstContent);
     expect(response.status()).toBe(200);
-    // The web server may add its own nosniff on top of the plugin's.
-    expect(response.headers()['x-content-type-options']).toContain('nosniff');
+    expect(response.headers()['x-content-type-options']).toBe('nosniff');
     expect(response.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
   });
 

@@ -55,7 +55,7 @@ down: check-docker ## Stop containers, keep data
 
 pull: check-docker ## Pull base images
 	$(COMPOSE) pull db
-	docker pull ghcr.io/erseco/alpine-chamilo:$${CHAMILO_VERSION:-3.0.2}
+	docker pull ghcr.io/erseco/alpine-chamilo:$${CHAMILO_VERSION:-3.0.2-r1}
 
 build: check-docker .env ## Build the Chamilo image (CHAMILO_VERSION from .env)
 	$(COMPOSE) build chamilo

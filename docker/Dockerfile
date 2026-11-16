@@ -1,7 +1,7 @@
 # Development and CI image for the ExeLearning plugin: the published Chamilo
 # image plus what a runtime-mounted plugin needs. Chamilo itself, its
 # unattended install and its web server come from erseco/alpine-chamilo.
-ARG CHAMILO_VERSION=3.0.2
+ARG CHAMILO_VERSION=3.0.2-r1
 FROM ghcr.io/erseco/alpine-chamilo:${CHAMILO_VERSION}
 
 USER root

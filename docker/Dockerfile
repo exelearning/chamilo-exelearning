@@ -30,11 +30,20 @@ RUN set -x; \
         unzip -q /tmp/chamilo.zip -d /var/www/chamilo; \
         rm /tmp/chamilo.zip ;; \
       *) \
-        apk add --no-cache git nodejs yarn; \
+        apk add --no-cache git nodejs; \
         git clone --depth 1 --branch "$CHAMILO_VERSION" https://github.com/chamilo/chamilo-lms.git /var/www/chamilo; \
+        # Composer scripts (assets:install, cache warmup) exceed the CLI's
+        # default 128M; the runtime limit comes later from the base template.
+        printf 'memory_limit=-1\n' > /etc/php83/conf.d/zz-build.ini; \
         COMPOSER_HOME=/tmp/composer composer install --no-interaction --no-progress; \
-        corepack enable && yarn install && yarn run encore production; \
-        rm -rf node_modules /tmp/composer ;; \
+        # Alpine's nodejs ships no corepack: run the Yarn release chamilo-lms
+        # commits under .yarn/releases. One command per step, so a failure
+        # stops the build (set -e ignores failures inside an && chain).
+        yarn_bin="$(ls .yarn/releases/yarn-*.cjs | head -n 1)"; \
+        node "$yarn_bin" install; \
+        NODE_OPTIONS=--max-old-space-size=4096 node "$yarn_bin" run encore production; \
+        test -f public/build/entrypoints.json; \
+        rm -rf node_modules /tmp/composer /etc/php83/conf.d/zz-build.ini ;; \
     esac; \
     mkdir -p var public/plugin; \
     chown -R nobody:nobody /var/www/chamilo

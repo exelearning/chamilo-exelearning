@@ -39,7 +39,7 @@ export function createEditorController({ frame, config, ui, win = window, fetchF
     body.append(config.tokenName, config.token);
 
     let response;
-    let result = null;
+    let result;
     try {
       response = await fetchFn(config.saveUrl, { method: 'POST', body, credentials: 'same-origin' });
       result = await response.json();

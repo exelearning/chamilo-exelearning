@@ -117,13 +117,6 @@ jobs:
   integration:
     needs: package
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.chamilo != 'v3.0.2' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        chamilo: ['v3.0.2', 'master']
-    env:
-      CHAMILO_VERSION: ${{ matrix.chamilo }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -154,7 +147,7 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-${{ matrix.chamilo }}
+          name: playwright
           path: |
             playwright-report
             test-results

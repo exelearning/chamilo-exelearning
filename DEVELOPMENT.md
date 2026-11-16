@@ -27,9 +27,8 @@ The course tool is at `/plugin/ExeLearning/start.php?cid=3`. These credentials a
 
 How it works:
 
-- **Image:** `docker/Dockerfile` (Alpine, nginx, PHP 8.3), with Chamilo unpacked from the release ZIP, which already contains
-  `vendor/` and the built front end. With `CHAMILO_VERSION=master`, Chamilo is built from source instead; that build needs ≈4 GB
-  of RAM for `yarn encore production`.
+- **Image:** `docker/Dockerfile` (Alpine, nginx, PHP 8.3), with Chamilo unpacked from the stable release ZIP, which already
+  contains `vendor/` and the built front end. Set `CHAMILO_VERSION` in `.env` to another stable tag (`vX.Y.Z`).
 - **Unattended install:** Chamilo 3 has no CLI installer. `docker/rootfs/usr/local/bin/chamilo-install.php` replays the web
   installer's fresh-install steps with Chamilo's own functions, then switches to `prod` mode, as Chamilo's CI does. It is
   idempotent: data lives in the `chamilo_data` and `db_data` volumes, so `make down && make up` keeps everything.

@@ -12,39 +12,20 @@ USER root
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# bcmath, ldap and xmlwriter (phpspreadsheet, master) are required by chamilo-lms and missing in the base.
-RUN apk add --no-cache unzip netcat-openbsd mariadb-client php83-bcmath php83-ldap php83-xsl php83-xmlwriter
+# bcmath and ldap are required by chamilo-lms composer.json and missing in the base.
+RUN apk add --no-cache unzip netcat-openbsd mariadb-client php83-bcmath php83-ldap php83-xsl
 
-# Tagged versions use the release ZIP, which already ships vendor/ and the built
-# public/build/ assets. "master" (or any branch) is built from source, which
-# needs Node/Yarn and ~4 GB of RAM for `yarn encore production`.
+# The release ZIP already ships vendor/ and the built public/build/ assets, so
+# no Composer or Yarn build is needed. Only stable tags (vX.Y.Z) are supported.
 ARG CHAMILO_VERSION=v3.0.2
 
 WORKDIR /var/www/chamilo
 
 RUN set -x; \
-    case "$CHAMILO_VERSION" in \
-      v[0-9]*) \
-        ver="${CHAMILO_VERSION#v}"; \
-        curl -fsSL -o /tmp/chamilo.zip "https://github.com/chamilo/chamilo-lms/releases/download/${CHAMILO_VERSION}/chamilo-${ver}.zip"; \
-        unzip -q /tmp/chamilo.zip -d /var/www/chamilo; \
-        rm /tmp/chamilo.zip ;; \
-      *) \
-        apk add --no-cache git nodejs; \
-        git clone --depth 1 --branch "$CHAMILO_VERSION" https://github.com/chamilo/chamilo-lms.git /var/www/chamilo; \
-        # Composer scripts (assets:install, cache warmup) exceed the CLI's
-        # default 128M; the runtime limit comes later from the base template.
-        printf 'memory_limit=-1\n' > /etc/php83/conf.d/zz-build.ini; \
-        COMPOSER_HOME=/tmp/composer composer install --no-interaction --no-progress; \
-        # Alpine's nodejs ships no corepack: run the Yarn release chamilo-lms
-        # commits under .yarn/releases. One command per step, so a failure
-        # stops the build (set -e ignores failures inside an && chain).
-        yarn_bin="$(ls .yarn/releases/yarn-*.cjs | head -n 1)"; \
-        node "$yarn_bin" install; \
-        NODE_OPTIONS=--max-old-space-size=4096 node "$yarn_bin" run encore production; \
-        test -f public/build/entrypoints.json; \
-        rm -rf node_modules /tmp/composer /etc/php83/conf.d/zz-build.ini ;; \
-    esac; \
+    curl -fsSL -o /tmp/chamilo.zip "https://github.com/chamilo/chamilo-lms/releases/download/${CHAMILO_VERSION}/chamilo-${CHAMILO_VERSION#v}.zip"; \
+    unzip -q /tmp/chamilo.zip -d /var/www/chamilo; \
+    rm /tmp/chamilo.zip; \
+    test -f public/build/entrypoints.json; \
     mkdir -p var public/plugin; \
     chown -R nobody:nobody /var/www/chamilo
 

@@ -367,3 +367,4 @@ Deviations from the brief:
 - CI uses the same Docker image with MariaDB, as in development, not a MySQL 8.4 service container.
 - Group-owned packages and a custom tool icon are out (decisions 10 and 11).
 - Admin-side enabling is done by the seed, not clicked in E2E.
+- Chamilo `master` is not built or tested: by decision, only stable releases are supported. The CI matrix entry and the source build were removed.

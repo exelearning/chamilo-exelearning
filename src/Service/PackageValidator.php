@@ -94,32 +94,9 @@ final class PackageValidator
         $total = 0;
 
         for ($i = 0; $i < $zip->numFiles; ++$i) {
-            $stat = $zip->statIndex($i);
-            if (false === $stat) {
-                throw new PackageException(PackageException::INVALID_ZIP);
-            }
-
-            $name = (string) $stat['name'];
-            if (!PackagePath::isSafe($name) || PackagePath::isForbiddenName($name)) {
-                throw new PackageException(PackageException::UNSAFE_PATH);
-            }
-
-            $opsys = 0;
-            $attributes = 0;
-            if ($zip->getExternalAttributesIndex($i, $opsys, $attributes)
-                && ZipArchive::OPSYS_UNIX === $opsys
-                && self::UNIX_SYMLINK === (($attributes >> 16) & self::UNIX_FILE_TYPE_MASK)) {
-                throw new PackageException(PackageException::SYMLINK);
-            }
-
-            if (str_ends_with($name, '/')) {
+            [$name, $size] = $this->checkEntry($zip, $i);
+            if (null === $size) {
                 continue;
-            }
-
-            $size = (int) $stat['size'];
-            $compressed = max(1, (int) $stat['comp_size']);
-            if ($size > self::RATIO_MIN_ENTRY_SIZE && intdiv($size, $compressed) > $this->maxCompressionRatio) {
-                throw new PackageException(PackageException::COMPRESSION_RATIO);
             }
 
             $total += $size;
@@ -135,5 +112,48 @@ final class PackageValidator
         }
 
         return $files;
+    }
+
+    /**
+     * Check one entry: safe name, not a symlink, plausible compression ratio.
+     *
+     * @return array{string, ?int} entry name and declared size (null for a directory)
+     */
+    private function checkEntry(ZipArchive $zip, int $index): array
+    {
+        $stat = $zip->statIndex($index);
+        if (false === $stat) {
+            throw new PackageException(PackageException::INVALID_ZIP);
+        }
+
+        $name = (string) $stat['name'];
+        if (!PackagePath::isSafe($name) || PackagePath::isForbiddenName($name)) {
+            throw new PackageException(PackageException::UNSAFE_PATH);
+        }
+
+        if ($this->isSymlink($zip, $index)) {
+            throw new PackageException(PackageException::SYMLINK);
+        }
+
+        if (str_ends_with($name, '/')) {
+            return [$name, null];
+        }
+
+        $size = (int) $stat['size'];
+        if ($size > self::RATIO_MIN_ENTRY_SIZE && intdiv($size, max(1, (int) $stat['comp_size'])) > $this->maxCompressionRatio) {
+            throw new PackageException(PackageException::COMPRESSION_RATIO);
+        }
+
+        return [$name, $size];
+    }
+
+    private function isSymlink(ZipArchive $zip, int $index): bool
+    {
+        $opsys = 0;
+        $attributes = 0;
+
+        return $zip->getExternalAttributesIndex($index, $opsys, $attributes)
+            && ZipArchive::OPSYS_UNIX === $opsys
+            && self::UNIX_SYMLINK === (($attributes >> 16) & self::UNIX_FILE_TYPE_MASK);
     }
 }

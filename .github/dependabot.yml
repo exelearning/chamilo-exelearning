@@ -1,0 +1,40 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 5
+    ignore:
+      # Pinned to the versions chamilo-lms itself uses, so `make lint` applies
+      # Chamilo's ruleset with Chamilo's tools.
+      - dependency-name: "symplify/easy-coding-standard"
+      - dependency-name: "slevomat/coding-standard"
+      - dependency-name: "squizlabs/php_codesniffer"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 5
+    groups:
+      # @vitest/* peer-pin vitest to the exact same version.
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"

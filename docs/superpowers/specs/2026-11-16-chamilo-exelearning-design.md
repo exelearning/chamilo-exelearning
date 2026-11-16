@@ -1,7 +1,7 @@
 # chamilo-exelearning — Phase 0 design
 
 - Date: 2026-11-16
-- Status: **Draft, awaiting approval** (no plugin code exists yet)
+- Status: **Approved** ("continúa hasta tener funcionando el plugin"); v0.1.0 implemented on `feature/plugin-v0.1.0`
 - Target: Chamilo LMS `v3.0.2` (PHP `^8.3`, Symfony 7.4, Doctrine ORM 3, API Platform 4)
 - Editor: `exelearning/exelearning` `v4.0.6` (the value all four siblings pin in `.editor-version`)
 
@@ -349,3 +349,21 @@ Recommendation: A for v0.2.0, and C proposed upstream in parallel without blocki
 | API for `ResourceLink` tool visibility and course-access checks for an arbitrary package course (no `cid` in asset requests) | Steps 3 and 5 |
 | `EmbeddingBridge` `OPEN_FILE` payload for loading an existing `.elpx`, and the SCORM export `format` value (v0.2) | Step 6 |
 | `UserManager`/`CourseManager` CLI signatures for the seed | Step 2 |
+
+## Experiment results (implementation, 2026-11-16)
+
+| Question | Result | Evidence |
+|---|---|---|
+| CSRF listener and plugin scripts (§3.1) | **Fires for plugin POSTs.** A cross-site POST to `start.php` (Origin `https://evil.example`, `Sec-Fetch-Site: cross-site`) is turned away before plugin code runs, which matches the router resolving `/` to `index`. A same-origin POST without our token is rejected by `Security::check_token`. Both layers stay | curl probes against `make up` |
+| Installer replay (§3.5, option b) | **Valid install.** Login, admin, course creation and plugin enable all work. First `make up` from empty volumes takes 61 s; a second `make up` is idempotent (36 s). The installer leaves `dev` mode, whose cache rebuild exhausts 512 MB, so the script switches to `prod` as Chamilo's CI does | `docker/rootfs/usr/local/bin/chamilo-install.php` |
+| `PATH_INFO` (§6.1) | **Works** on the alpine-php-webserver nginx (`location ~ [^/]\.php(/\|$)` + `fastcgi_split_path_info`). Chamilo's router would 404 on the extra path, so `content.php` hides it (`REQUEST_URI` = script name) before booting Chamilo | `content.php` |
+| Asset requests have no course context (§3.3 / §4) | Solved with `ContentToken`: `view.php` checks course access through Chamilo, then mints an HMAC token bound to user, package and version (12 h) | `src/Service/ContentToken.php` |
+| Tool visibility API | `CTool::getVisibility()` (resource link of the course) | `src/ExeLearningPlugin.php::isToolVisible()` |
+| CLI seeding | Needs `_user` and `access_url_id` in the session and a security token, or `ResourceListener` refuses to persist | `scripts/cli-bootstrap.php` |
+| Editor protocol | `initialProjectUrl` loads the package (no `OPEN_FILE` needed); `REQUEST_EXPORT {format:'elpx'}` returns `EXPORT_FILE`. The editor reports `PROJECT_DIRTY` once and never learns about our saves, so an injected `editor-bridge.js` reports every Y.Doc change | `resources/js/editor-bridge.js` |
+| Demo course visibility | `CourseManager::create_course()` defaults to `OPEN_PLATFORM` (any logged-in user may enter). The seed sets `REGISTERED` so the "not enrolled" path is testable | `scripts/seed.php` |
+
+Deviations from the brief:
+- CI uses the same Docker image with MariaDB, as in development, not a MySQL 8.4 service container.
+- Group-owned packages and a custom tool icon are out (decisions 10 and 11).
+- Admin-side enabling is done by the seed, not clicked in E2E.

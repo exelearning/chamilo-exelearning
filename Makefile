@@ -6,7 +6,7 @@ SHELL := /bin/bash
 PLUGIN_NAME := ExeLearning
 COMPOSE := docker compose
 EXEC := $(COMPOSE) exec -T chamilo
-CHAMILO_DIR := /var/www/chamilo
+CHAMILO_DIR := /var/www/html
 
 EDITOR_SUBMODULE_PATH := exelearning
 EDITOR_REPO_DEFAULT := https://github.com/exelearning/exelearning.git
@@ -45,7 +45,7 @@ check-bun: ## Fail unless Bun is installed
 up: check-docker .env ## Start Chamilo (foreground until healthy), install, enable and seed the plugin
 	$(COMPOSE) up -d --build --wait
 	@$(MAKE) --no-print-directory seed
-	@echo "Chamilo: http://localhost:$${CHAMILO_PORT:-8080} (admin/admin, teacher/teacher, student/student)"
+	@echo "Chamilo: http://localhost:$${CHAMILO_PORT:-8080} (admin/admin-exelearning, teacher/teacher, student/student)"
 
 upd: check-docker .env ## Start containers in the background without waiting or seeding
 	$(COMPOSE) up -d --build
@@ -55,7 +55,7 @@ down: check-docker ## Stop containers, keep data
 
 pull: check-docker ## Pull base images
 	$(COMPOSE) pull db
-	docker pull ghcr.io/erseco/alpine-php-webserver:3.24-php83
+	docker pull ghcr.io/erseco/alpine-chamilo:$${CHAMILO_VERSION:-3.0.2}
 
 build: check-docker .env ## Build the Chamilo image (CHAMILO_VERSION from .env)
 	$(COMPOSE) build chamilo
@@ -66,9 +66,8 @@ shell: check-docker ## Open a shell in the Chamilo container
 logs: check-docker ## Follow container logs
 	$(COMPOSE) logs -f
 
-clean: check-docker ## Stop containers and remove the Chamilo data volume (keeps the database)
-	$(COMPOSE) down
-	-docker volume rm chamilo-exelearning_chamilo_data
+clean: check-docker ## Stop containers and remove all data volumes (Chamilo and its database go together)
+	$(COMPOSE) down -v
 
 destroy: check-docker ## Remove containers, volumes and the built image
 	$(COMPOSE) down -v --rmi local

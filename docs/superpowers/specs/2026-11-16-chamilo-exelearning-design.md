@@ -368,3 +368,4 @@ Deviations from the brief:
 - Group-owned packages and a custom tool icon are out (decisions 10 and 11).
 - Admin-side enabling is done by the seed, not clicked in E2E.
 - Chamilo `master` is not built or tested: by decision, only stable releases are supported. The CI matrix entry and the source build were removed.
+- The dev/CI image now extends the published `erseco/alpine-chamilo:3.0.2`, which took over the unattended install (ported from this repo's installer replay). `docker/` keeps only Composer and the boot-time `dump-autoload` for the mounted plugin.

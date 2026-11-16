@@ -1,0 +1,56 @@
+# Local development environment: Chamilo 3 + MariaDB with this repository
+# mounted as public/plugin/ExeLearning. Credentials are for local use only.
+name: chamilo-exelearning
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: chamilo
+      MARIADB_USER: chamilo
+      MARIADB_PASSWORD: chamilo
+      MARIADB_ROOT_PASSWORD: root
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  chamilo:
+    build:
+      context: docker
+      args:
+        CHAMILO_VERSION: ${CHAMILO_VERSION:-v3.0.2}
+    image: chamilo-exelearning-dev:${CHAMILO_VERSION:-v3.0.2}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${CHAMILO_PORT:-8080}:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: chamilo
+      DB_USER: chamilo
+      DB_PASSWORD: chamilo
+      CHAMILO_URL: http://localhost:${CHAMILO_PORT:-8080}
+      CHAMILO_ADMIN_PASSWORD: ${CHAMILO_ADMIN_PASSWORD:-admin}
+    volumes:
+      - chamilo_data:/var/www/chamilo
+      - ./:/var/www/chamilo/public/plugin/ExeLearning
+      # Chamilo's classmap and subscriber finder scan public/plugin recursively:
+      # hide our dev-only trees from them (PHPUnit in vendor/ would clash with
+      # Chamilo's classes; the editor checkout contains PHP files; build/ holds
+      # copies of the plugin's own classes).
+      - /var/www/chamilo/public/plugin/ExeLearning/vendor
+      - /var/www/chamilo/public/plugin/ExeLearning/node_modules
+      - /var/www/chamilo/public/plugin/ExeLearning/exelearning
+      # make package output: a stale copy of our own classes.
+      - /var/www/chamilo/public/plugin/ExeLearning/build
+
+volumes:
+  db_data:
+  chamilo_data:

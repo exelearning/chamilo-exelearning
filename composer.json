@@ -1,0 +1,47 @@
+{
+    "name": "exelearning/chamilo-exelearning",
+    "description": "eXeLearning plugin for Chamilo LMS 3: upload, view and edit eXeLearning v4 packages in courses.",
+    "type": "chamilo-plugin",
+    "license": "AGPL-3.0-or-later",
+    "homepage": "https://github.com/exelearning/chamilo-exelearning",
+    "require": {
+        "php": ">=8.3",
+        "ext-dom": "*",
+        "ext-zip": "*"
+    },
+    "require-dev": {
+        "league/flysystem": "^3.29",
+        "league/flysystem-memory": "^3.29",
+        "phpmd/phpmd": "^2.15",
+        "phpunit/phpunit": "^11.5",
+        "slevomat/coding-standard": "7.2.1",
+        "squizlabs/php_codesniffer": "3.13.6",
+        "symplify/easy-coding-standard": "12.6.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Chamilo\\PluginBundle\\ExeLearning\\": "src/"
+        },
+        "exclude-from-classmap": [
+            "src/ExeLearningPlugin.php",
+            "src/EventSubscriber/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Chamilo\\PluginBundle\\ExeLearning\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "test": "phpunit --testsuite unit"
+    }
+}

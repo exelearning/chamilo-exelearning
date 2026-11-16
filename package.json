@@ -1,0 +1,21 @@
+{
+  "name": "chamilo-exelearning",
+  "private": true,
+  "description": "Front-end tests and tooling for the eXeLearning Chamilo plugin.",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint resources/js tests/js tests/e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "^1.57.0",
+    "@vitest/coverage-v8": "^4.0.0",
+    "eslint": "^9.39.0",
+    "globals": "^16.5.0",
+    "happy-dom": "^20.0.0",
+    "vitest": "^4.0.0"
+  }
+}

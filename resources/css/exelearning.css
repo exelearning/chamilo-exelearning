@@ -1,0 +1,26 @@
+/* eXeLearning plugin for Chamilo. */
+.exelearning-tool { display: grid; gap: 1rem; }
+.exelearning-upload form { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: end; }
+.exelearning-help { flex-basis: 100%; margin: 0; font-size: .875rem; opacity: .8; }
+.exelearning-inline { display: inline-flex; gap: .25rem; margin: 0; }
+.exelearning-inline input[type="text"] { width: 12rem; }
+.exelearning-actions { white-space: nowrap; }
+.exelearning-hidden td { opacity: .6; }
+
+.exelearning-viewer { display: flex; flex-direction: column; gap: .5rem; }
+.exelearning-toolbar { display: flex; flex-wrap: wrap; gap: .5rem; }
+.exelearning-frame { width: 100%; height: 80vh; min-height: 480px; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+.exelearning-viewer:fullscreen { background: #fff; padding: .5rem; }
+.exelearning-viewer:fullscreen .exelearning-frame { height: calc(100vh - 4rem); }
+
+.exelearning-editor-page { margin: 0; height: 100vh; font-family: system-ui, sans-serif; }
+.exelearning-editor { display: flex; flex-direction: column; height: 100vh; }
+.exelearning-editor-bar { display: flex; align-items: center; gap: .75rem; padding: .5rem 1rem; border-bottom: 1px solid #ddd; background: #f7f7f7; }
+.exelearning-editor-title { flex: 1; display: flex; gap: .5rem; align-items: center; }
+.exelearning-editor-title input { flex: 1; max-width: 32rem; }
+.exelearning-editor-status { font-size: .875rem; }
+.exelearning-editor-status[data-state="error"] { color: #b00020; }
+.exelearning-editor-frame { flex: 1; width: 100%; border: 0; }
+.exelearning-editor-bar .btn { padding: .375rem .875rem; border: 1px solid #888; border-radius: 4px; background: #fff; cursor: pointer; }
+.exelearning-editor-bar .btn--primary { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+.exelearning-editor-bar .btn:disabled { opacity: .5; cursor: default; }

@@ -1,0 +1,17 @@
+/.env
+/vendor/
+/node_modules/
+/exelearning/
+/dist/
+/build/
+/coverage/
+/coverage.xml
+/coverage.txt
+/test-results/
+/playwright-report/
+/.phpunit.cache/
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+.DS_Store
+/.playwright-mcp/
+/.ecs-cache/

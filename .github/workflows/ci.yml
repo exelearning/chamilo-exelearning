@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['.agents/skills/**', '.claude/skills/**', '**.md', 'docs/**']
+  pull_request:
+    paths-ignore: ['.agents/skills/**', '.claude/skills/**', '**.md', 'docs/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-interaction --no-progress
+      - run: npm ci
+      - run: make lint
+      - run: make phpmd
+      - run: make check-untranslated
+      - run: make check-version
+
+  unit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: zip, dom
+          coverage: pcov
+      - run: composer install --no-interaction --no-progress
+      - run: make test-coverage
+      - if: matrix.php == '8.3'
+        uses: codecov/codecov-action@v7
+        with:
+          use_oidc: true
+          files: coverage.xml
+          flags: php
+          fail_ci_if_error: false
+
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: make test-js
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - uses: oven-sh/setup-bun@v2
+      - name: Cache the built editor
+        id: editor
+        uses: actions/cache@v6
+        with:
+          path: dist/static
+          key: editor-${{ hashFiles('.editor-version') }}
+      - if: steps.editor.outputs.cache-hit != 'true'
+        run: make build-editor
+      - name: Build and inspect the release ZIP
+        run: |
+          version="$(php scripts/check-version.php --print)"
+          make package VERSION="$version"
+          make check-package VERSION="$version"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: build/*.zip
+          retention-days: 7
+      - uses: actions/upload-artifact@v7
+        with:
+          name: editor
+          path: dist/static
+          include-hidden-files: true
+          retention-days: 1
+
+  integration:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: editor
+          path: dist/static
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+      - name: Start Chamilo with the plugin (installs, enables, seeds)
+        run: make up
+      - run: make test-e2e
+        env:
+          CI: 'true'
+      - run: make test-integration ARGS=--uninstall
+      - if: failure()
+        run: docker compose logs chamilo | tail -n 300
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

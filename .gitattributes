@@ -1,0 +1,19 @@
+# Shapes `git archive` / GitHub source ZIPs only. The release ZIP is built by
+# `make package` from .distignore, which is the single source of truth for
+# what ships; the two lists have different jobs and are not kept in sync.
+* text=auto eol=lf
+*.png binary
+*.elpx binary
+/.agents/            export-ignore
+/.claude/            export-ignore
+/AGENTS.md           export-ignore
+/CLAUDE.md           export-ignore
+/.github/            export-ignore
+/.distignore         export-ignore
+/.gitattributes      export-ignore
+/.gitignore          export-ignore
+/.env.dist           export-ignore
+/docker/             export-ignore
+/docker-compose.yml  export-ignore
+/tests/              export-ignore
+/docs/               export-ignore

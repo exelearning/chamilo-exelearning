@@ -56,7 +56,7 @@ player-only mode. Override the source with `EXELEARNING_EDITOR_REPO_URL`, `EXELE
 ```bash
 make install-deps        # composer + npm
 make lint                # ECS with Chamilo's own ruleset (read-only) + ESLint; `make fix` applies fixes
-make phpmd
+make phpmd               # PHPMD 3; on a PHP 8.5 host it can exit 0 without reporting: trust CI (PHP 8.3)
 make test                # PHPUnit unit suite (no Chamilo needed); FILTER=Name to narrow
 make test-coverage       # with the MIN_COVERAGE ratchet (never lower it)
 make test-js             # Vitest: editor bridge

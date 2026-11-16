@@ -3,6 +3,7 @@
 /* For licensing terms, see /license.txt */
 
 declare(strict_types=1);
+use Chamilo\PluginBundle\ExeLearning\Service\PackageException;
 
 /*
  * `make check-untranslated`: every lang/*.php has exactly the keys of
@@ -11,6 +12,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 $load = static function (string $file): array {
     $strings = [];
+
     include $file;
 
     return $strings;
@@ -39,14 +41,15 @@ foreach (array_merge(glob($root.'/*.php') ?: [], glob($root.'/src/*.php') ?: [],
     $code .= file_get_contents($file);
 }
 preg_match_all("/(?:get_lang|->e)\\('([a-z0-9_]+)'\\)/", $code, $used);
-preg_match_all("/PackageException::([A-Z_]+)/", $code, $errorConstants);
+preg_match_all('/PackageException::([A-Z_]+)/', $code, $errorConstants);
 foreach (array_unique($used[1]) as $key) {
     if (!isset($base[$key])) {
         $errors[] = "en_US: '$key' is used in the code but not defined";
     }
 }
+
 require_once $root.'/src/Service/PackageException.php';
-$reflection = new ReflectionClass(Chamilo\PluginBundle\ExeLearning\Service\PackageException::class);
+$reflection = new ReflectionClass(PackageException::class);
 foreach ($reflection->getConstants() as $value) {
     if (!isset($base[$value])) {
         $errors[] = "en_US: error key '$value' is not defined";
@@ -54,8 +57,8 @@ foreach ($reflection->getConstants() as $value) {
 }
 
 if ([] !== $errors) {
-    fwrite(STDERR, implode("\n", $errors)."\n");
+    fwrite(\STDERR, implode("\n", $errors)."\n");
 
     exit(1);
 }
-fwrite(STDOUT, sprintf("%d keys, %d languages, all translated.\n", count($base), count(glob($root.'/lang/*.php') ?: [])));
+fwrite(\STDOUT, sprintf("%d keys, %d languages, all translated.\n", count($base), count(glob($root.'/lang/*.php') ?: [])));

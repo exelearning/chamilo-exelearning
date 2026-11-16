@@ -11,7 +11,7 @@ declare(strict_types=1);
 [, $file, $minimum] = $argv + [null, 'coverage.xml', '0'];
 $xml = @simplexml_load_file((string) $file);
 if (false === $xml) {
-    fwrite(STDERR, "Cannot read $file.\n");
+    fwrite(\STDERR, "Cannot read $file.\n");
 
     exit(1);
 }
@@ -20,4 +20,5 @@ $total = (int) $metrics['statements'];
 $covered = (int) $metrics['coveredstatements'];
 $percent = 0 === $total ? 100.0 : 100 * $covered / $total;
 printf("Line coverage: %.2f%% (%d/%d), minimum %s%%\n", $percent, $covered, $total, $minimum);
+
 exit($percent + 1e-9 < (float) $minimum ? 1 : 0);

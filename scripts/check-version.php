@@ -13,7 +13,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 $source = (string) file_get_contents($root.'/src/ExeLearningPlugin.php');
 if (1 !== preg_match("/public const string VERSION = '([^']+)';/", $source, $m)) {
-    fwrite(STDERR, "ExeLearningPlugin::VERSION not found.\n");
+    fwrite(\STDERR, "ExeLearningPlugin::VERSION not found.\n");
 
     exit(1);
 }
@@ -37,8 +37,8 @@ if (!str_contains((string) @file_get_contents($root.'/CHANGELOG.md'), '## ['.$ve
 }
 
 if ([] !== $errors) {
-    fwrite(STDERR, implode("\n", $errors)."\n");
+    fwrite(\STDERR, implode("\n", $errors)."\n");
 
     exit(1);
 }
-fwrite(STDOUT, "Version $version is consistent.\n");
+fwrite(\STDOUT, "Version $version is consistent.\n");

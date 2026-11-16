@@ -12,7 +12,7 @@ declare(strict_types=1);
 $zipPath = $argv[1] ?? '';
 $zip = new ZipArchive();
 if ('' === $zipPath || true !== $zip->open($zipPath, ZipArchive::RDONLY)) {
-    fwrite(STDERR, "Cannot open '$zipPath'.\n");
+    fwrite(\STDERR, "Cannot open '$zipPath'.\n");
 
     exit(1);
 }
@@ -52,8 +52,8 @@ foreach (['app/', 'libs/'] as $dir) {
 }
 
 if ([] !== $errors) {
-    fwrite(STDERR, implode("\n", $errors)."\n");
+    fwrite(\STDERR, implode("\n", $errors)."\n");
 
     exit(1);
 }
-fwrite(STDOUT, sprintf("%s: %d entries, layout OK.\n", basename($zipPath), count($names)));
+fwrite(\STDOUT, sprintf("%s: %d entries, layout OK.\n", basename($zipPath), count($names)));

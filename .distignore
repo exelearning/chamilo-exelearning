@@ -1,0 +1,71 @@
+# Files and directories kept out of the release ZIP (ExeLearning-<version>.zip).
+#
+# `make package` copies the tree with `rsync --exclude-from=.distignore`, so
+# these are rsync patterns: a leading slash anchors to the package root, and an
+# unanchored rule matches at any depth. Anchor every directory rule: the editor
+# under dist/static/ has its own folders (themes, vendor libraries) that an
+# unanchored rule would silently strip.
+#
+# The built editor in dist/static/ is a release artifact and MUST ship. Do not
+# add a dist rule here. .gitattributes is a different contract (source archives).
+
+# VCS and CI
+/.git
+/.github/
+/.gitignore
+/.gitattributes
+/.distignore
+
+# Agent instructions and skills
+/.agents/
+/.claude/
+/AGENTS.md
+/CLAUDE.md
+
+# Local tooling leftovers
+.DS_Store
+/.env
+/.env.dist
+/.playwright-mcp/
+/.ecs-cache/
+/.phpunit.cache/
+/node_modules/
+/vendor/
+/coverage/
+/coverage.xml
+/coverage.txt
+/test-results/
+/playwright-report/
+
+# Build inputs: only the built editor ships, not its checkout
+/exelearning/
+
+# Tests and development environment
+/tests/
+/docker/
+/scripts/
+/docker-compose.yml
+/Makefile
+/composer.json
+/composer.lock
+/package.json
+/package-lock.json
+/phpunit.xml.dist
+/phpmd.xml
+/ecs.php
+/eslint.config.mjs
+/vitest.config.mjs
+/playwright.config.js
+/codecov.yml
+/.editorconfig
+/.editor-version
+/architecture-records.json
+
+# Repository documentation (DEVELOPMENT.md and docs/ are for contributors;
+# README.md, CHANGELOG.md, SECURITY.md, LICENSE and docs for users ship)
+/docs/
+/DEVELOPMENT.md
+
+# Packaging output
+/build/
+*.zip

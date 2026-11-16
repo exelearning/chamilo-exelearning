@@ -84,11 +84,11 @@ install-deps: ## Install PHP and JS development dependencies
 
 lint: ## Check coding style (read-only)
 	$(ECS) check
-	npx --no-install eslint resources/js tests/js
+	npx --no-install eslint resources/js tests/js tests/e2e
 
 fix: ## Apply coding-style fixes
 	$(ECS) check --fix
-	npx --no-install eslint --fix resources/js tests/js
+	npx --no-install eslint --fix resources/js tests/js tests/e2e
 
 phpmd: ## Run PHP Mess Detector
 	php -d error_reporting='E_ALL & ~E_DEPRECATED' -d display_errors=stderr vendor/bin/phpmd src,start.php,view.php,content.php,editor.php,edit.php,save.php,download.php,config.php,plugin.php text phpmd.xml

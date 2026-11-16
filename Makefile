@@ -218,6 +218,9 @@ package: ## Build build/ExeLearning-$(VERSION).zip (VERSION=X.Y.Z required)
 	rsync -a --exclude-from=.distignore ./ $(PACKAGE_DIR)/$(PLUGIN_NAME)/
 	cd $(PACKAGE_DIR) && zip -qr $(PLUGIN_NAME)-$(VERSION).zip $(PLUGIN_NAME)
 	cd $(PACKAGE_DIR) && shasum -a 256 $(PLUGIN_NAME)-$(VERSION).zip > $(PLUGIN_NAME)-$(VERSION).zip.sha256
+	@# Never leave the staging copy: the repository is mounted under public/plugin
+	@# and Chamilo's classmap would load its stale classes instead of ours.
+	rm -rf $(PACKAGE_DIR)/$(PLUGIN_NAME)
 	@echo "Built $(PACKAGE_DIR)/$(PLUGIN_NAME)-$(VERSION).zip"
 
 check-package: ## Inspect the built ZIP (VERSION=X.Y.Z required)

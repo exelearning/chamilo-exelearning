@@ -107,15 +107,40 @@ describe('editor controller', () => {
     expect(t.fetchFn).not.toHaveBeenCalled();
   });
 
-  it('keeps the page dirty when the editor changed during the save', async () => {
+  it('keeps the page dirty when the editor changed after the exported state', async () => {
     t.send({ type: 'DOCUMENT_LOADED' });
-    t.send({ type: 'DOCUMENT_CHANGED' });
+    t.send({ type: 'DOCUMENT_CHANGED', seq: 1 });
     t.controller.save();
     const { requestId } = t.editorWindow.postMessage.mock.calls.at(-1)[0];
-    t.send({ type: 'DOCUMENT_CHANGED' });
+    t.send({ type: 'EXPORT_MARK', requestId, seq: 1 });
+    t.send({ type: 'DOCUMENT_CHANGED', seq: 2 });
     t.send({ type: 'EXPORT_FILE', requestId, bytes: new ArrayBuffer(4) });
     await flush();
     expect(t.controller.state.dirty).toBe(true);
+  });
+
+  it('is clean after a save even when the last change is reported late', async () => {
+    t.send({ type: 'DOCUMENT_LOADED' });
+    t.send({ type: 'EXELEARNING_EVENT', event: 'PROJECT_DIRTY' });
+    t.controller.save();
+    const { requestId } = t.editorWindow.postMessage.mock.calls.at(-1)[0];
+    t.send({ type: 'EXPORT_MARK', requestId, seq: 3 });
+    // The debounced notification for changes 1..3 arrives after the export started.
+    t.send({ type: 'DOCUMENT_CHANGED', seq: 3 });
+    t.send({ type: 'EXPORT_FILE', requestId, bytes: new ArrayBuffer(4) });
+    await flush();
+    expect(t.controller.state.dirty).toBe(false);
+  });
+
+  it('ignores an EXPORT_MARK for another request', async () => {
+    t.send({ type: 'DOCUMENT_LOADED' });
+    t.send({ type: 'DOCUMENT_CHANGED', seq: 5 });
+    t.controller.save();
+    const { requestId } = t.editorWindow.postMessage.mock.calls.at(-1)[0];
+    t.send({ type: 'EXPORT_MARK', requestId: 'other', seq: 0 });
+    t.send({ type: 'EXPORT_FILE', requestId, bytes: new ArrayBuffer(4) });
+    await flush();
+    expect(t.controller.state.dirty).toBe(false);
   });
 
   it('reports a conflict on 409 and keeps the old expected hash', async () => {

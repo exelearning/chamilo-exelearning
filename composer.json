@@ -22,7 +22,10 @@
         "psr-4": {
             "Chamilo\\PluginBundle\\ExeLearning\\": "src/"
         },
-        "exclude-from-classmap": ["src/ExeLearningPlugin.php", "src/EventSubscriber/"]
+        "exclude-from-classmap": [
+            "src/ExeLearningPlugin.php",
+            "src/EventSubscriber/"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -30,6 +33,9 @@
         }
     },
     "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
         "sort-packages": true,
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true

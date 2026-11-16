@@ -50,7 +50,8 @@ test.describe.serial('package lifecycle', () => {
 
     const saved = page.waitForResponse((r) => r.url().includes('/save.php'));
     await page.locator('[data-exelearning-save]').click();
-    expect((await saved).status()).toBe(200);
+    const response = await saved;
+    expect(response.status(), await response.text()).toBe(200);
     await expect(root).toHaveAttribute('data-dirty', 'false');
 
     const after = await contentUrl(page, id);

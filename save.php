@@ -66,6 +66,8 @@ try {
         Database::getManager()->refresh($package);
     }
 } catch (PackageException $e) {
+    // The reason is a translation key: safe to log, useful to diagnose editor exports.
+    error_log('[ExeLearning] save rejected: '.$e->getMessage());
     $reply(422, ['ok' => false, 'error' => $plugin->get_lang($e->getMessage())]);
 }
 

@@ -12,8 +12,8 @@ USER root
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# bcmath and ldap are required by chamilo-lms composer.json and missing in the base.
-RUN apk add --no-cache unzip netcat-openbsd mariadb-client php83-bcmath php83-ldap php83-xsl
+# bcmath, ldap and xmlwriter (phpspreadsheet, master) are required by chamilo-lms and missing in the base.
+RUN apk add --no-cache unzip netcat-openbsd mariadb-client php83-bcmath php83-ldap php83-xsl php83-xmlwriter
 
 # Tagged versions use the release ZIP, which already ships vendor/ and the built
 # public/build/ assets. "master" (or any branch) is built from source, which

@@ -43,10 +43,13 @@ services:
       - ./:/var/www/chamilo/public/plugin/ExeLearning
       # Chamilo's classmap and subscriber finder scan public/plugin recursively:
       # hide our dev-only trees from them (PHPUnit in vendor/ would clash with
-      # Chamilo's classes; the editor checkout contains PHP files).
+      # Chamilo's classes; the editor checkout contains PHP files; build/ holds
+      # copies of the plugin's own classes).
       - /var/www/chamilo/public/plugin/ExeLearning/vendor
       - /var/www/chamilo/public/plugin/ExeLearning/node_modules
       - /var/www/chamilo/public/plugin/ExeLearning/exelearning
+      # make package output: a stale copy of our own classes.
+      - /var/www/chamilo/public/plugin/ExeLearning/build
 
 volumes:
   db_data:

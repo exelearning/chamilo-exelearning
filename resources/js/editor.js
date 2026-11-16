@@ -24,7 +24,7 @@ export function isEditorMessage(event, frame, origin) {
  * Wire the editor page. Dependencies are injected for tests.
  */
 export function createEditorController({ frame, config, ui, win = window, fetchFn = fetch }) {
-  const state = { loaded: false, dirty: false, saving: false, pending: null, changes: 0, changesAtExport: 0, packageId: config.packageId, expectedHash: config.expectedHash };
+  const state = { loaded: false, dirty: false, saving: false, pending: null, seq: 0, exportSeq: 0, packageId: config.packageId, expectedHash: config.expectedHash };
 
   const post = (message) => frame.contentWindow.postMessage(message, config.origin);
 
@@ -58,8 +58,8 @@ export function createEditorController({ frame, config, ui, win = window, fetchF
 
     state.packageId = result.id;
     state.expectedHash = result.hash;
-    // Changes made while the export and upload were running are still unsaved.
-    state.dirty = state.changes !== state.changesAtExport;
+    // Changes numbered after the exported state are still unsaved.
+    state.dirty = state.seq > state.exportSeq;
     setStatus(config.i18n.saved, 'success');
     sync();
     return true;
@@ -68,7 +68,8 @@ export function createEditorController({ frame, config, ui, win = window, fetchF
   function save() {
     if (!state.loaded || state.saving) return false;
     state.saving = true;
-    state.changesAtExport = state.changes;
+    // Fallback when the bridge sends no EXPORT_MARK: what we have seen so far.
+    state.exportSeq = state.seq;
     ui.setSaving(true);
     setStatus(config.i18n.saving);
     state.pending = `save-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -103,8 +104,11 @@ export function createEditorController({ frame, config, ui, win = window, fetchF
         setStatus('');
         break;
       case 'DOCUMENT_CHANGED':
-        state.changes += 1;
+        state.seq = Math.max(state.seq, Number(message.seq) || state.seq + 1);
         state.dirty = true;
+        break;
+      case 'EXPORT_MARK':
+        if (message.requestId === state.pending) state.exportSeq = Number(message.seq) || 0;
         break;
       case 'EXELEARNING_EVENT':
         if (message.event === 'PROJECT_DIRTY') state.dirty = true;

@@ -90,7 +90,7 @@ fix: ## Apply coding-style fixes
 	npx --no-install eslint --fix resources/js tests/js tests/e2e
 
 phpmd: ## Run PHP Mess Detector
-	php -d error_reporting='E_ALL & ~E_DEPRECATED' -d display_errors=stderr vendor/bin/phpmd src,start.php,view.php,content.php,editor.php,edit.php,save.php,download.php,config.php,plugin.php text phpmd.xml
+	php -d error_reporting='E_ALL & ~E_DEPRECATED' -d display_errors=stderr vendor/bin/phpmd analyze --no-progress --format text --ruleset phpmd.xml src start.php view.php content.php editor.php edit.php save.php download.php config.php plugin.php
 
 test: ## Run PHPUnit unit tests (FILTER=pattern)
 	$(PHPUNIT) --testsuite unit $(if $(FILTER),--filter '$(FILTER)')

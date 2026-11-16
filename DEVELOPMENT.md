@@ -13,12 +13,12 @@
 make up           # builds the image, installs Chamilo 3.0.2, enables the plugin, seeds demo data
 ```
 
-The first run downloads the Chamilo release (≈250 MB) and takes about a minute after that. Then open
+The first run pulls the Chamilo image and takes about a minute after that. Then open
 <http://localhost:8080>:
 
 | User | Password | Role |
 |---|---|---|
-| `admin` | `admin` | platform administrator |
+| `admin` | `admin-exelearning` | platform administrator |
 | `teacher` | `teacher` | teacher of the *eXeLearning demo* course |
 | `student` | `student` | student of that course |
 | `outsider` | `outsider` | student, not enrolled (for denied-access checks) |
@@ -27,18 +27,18 @@ The course tool is at `/plugin/ExeLearning/start.php?cid=3`. These credentials a
 
 How it works:
 
-- **Image:** `docker/Dockerfile` (Alpine, nginx, PHP 8.3), with Chamilo unpacked from the stable release ZIP, which already
-  contains `vendor/` and the built front end. Set `CHAMILO_VERSION` in `.env` to another stable tag (`vX.Y.Z`).
-- **Unattended install:** Chamilo 3 has no CLI installer. `docker/rootfs/usr/local/bin/chamilo-install.php` replays the web
-  installer's fresh-install steps with Chamilo's own functions, then switches to `prod` mode, as Chamilo's CI does. It is
-  idempotent: data lives in the `chamilo_data` and `db_data` volumes, so `make down && make up` keeps everything.
-- **Every boot:** `composer dump-autoload` (plugin classes are in Chamilo's classmap) and `cache:clear`.
+- **Image:** `docker/Dockerfile` extends [`erseco/alpine-chamilo`](https://erseco.github.io/alpine-chamilo/) (Alpine, nginx,
+  PHP 8.3, Chamilo from the stable release). Set `CHAMILO_VERSION` in `.env` to another published tag.
+- **Unattended install:** done by the base image (`CHAMILO_AUTO_INSTALL=true`). Data lives in the `chamilo_state`,
+  `chamilo_config`, `chamilo_var` and `db_data` volumes, so `make down && make up` keeps everything.
+- **Every boot:** `docker/30-plugin-autoload.sh` runs `composer dump-autoload`, because plugin classes are in Chamilo's
+  classmap. That is the only thing this image adds to the base, besides Composer itself.
 - **Seed:** `make seed` (`scripts/seed.php`) installs and enables the plugin for the default access URL, creates the users and
   the course, adds the tool, and uploads `tests/fixtures/sample.elpx`.
 - **Mount:** the repository is mounted at `public/plugin/ExeLearning`. `vendor/`, `node_modules/` and `exelearning/` are masked
   inside the container, so Chamilo's classmap never scans them.
 
-Other targets: `make down`, `make logs`, `make shell`, `make clean` (drops the Chamilo volume), `make destroy` (everything).
+Other targets: `make down`, `make logs`, `make shell`, `make clean` (drops the data volumes), `make destroy` (everything).
 `make help` lists them all.
 
 ## Embedded editor

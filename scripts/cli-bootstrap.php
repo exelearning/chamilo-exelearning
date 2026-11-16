@@ -14,7 +14,7 @@ use Chamilo\CoreBundle\Framework\Container;
 use ChamiloSession as Session;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 
-require_once '/var/www/chamilo/public/main/inc/global.inc.php';
+require_once '/var/www/html/public/main/inc/global.inc.php';
 
 // Legacy APIs read the user from the session, Doctrine listeners read the
 // security token and the access URL from the session.

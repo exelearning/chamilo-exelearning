@@ -1,5 +1,6 @@
-# Local development environment: Chamilo 3 + MariaDB with this repository
-# mounted as public/plugin/ExeLearning. Credentials are for local use only.
+# Local development environment: Chamilo 3 (erseco/alpine-chamilo) + MariaDB
+# with this repository mounted as public/plugin/ExeLearning. Credentials are
+# for local use only.
 name: chamilo-exelearning
 
 services:
@@ -23,34 +24,41 @@ services:
     build:
       context: docker
       args:
-        CHAMILO_VERSION: ${CHAMILO_VERSION:-v3.0.2}
-    image: chamilo-exelearning-dev:${CHAMILO_VERSION:-v3.0.2}
+        CHAMILO_VERSION: ${CHAMILO_VERSION:-3.0.2}
+    image: chamilo-exelearning-dev:${CHAMILO_VERSION:-3.0.2}
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "${CHAMILO_PORT:-8080}:8080"
     environment:
-      DB_HOST: db
-      DB_PORT: "3306"
-      DB_NAME: chamilo
-      DB_USER: chamilo
-      DB_PASSWORD: chamilo
+      CHAMILO_AUTO_INSTALL: "true"
       CHAMILO_URL: http://localhost:${CHAMILO_PORT:-8080}
-      CHAMILO_ADMIN_PASSWORD: ${CHAMILO_ADMIN_PASSWORD:-admin}
+      CHAMILO_ADMIN_PASSWORD: ${CHAMILO_ADMIN_PASSWORD:-admin-exelearning}
+      CHAMILO_ADMIN_EMAIL: admin@example.com
+      DB_PASSWORD: chamilo
+    healthcheck:
+      # Same check as the image (healthy only once installed), polled faster.
+      test: ["CMD", "/usr/local/bin/chamilo-healthcheck"]
+      interval: 5s
+      timeout: 10s
+      retries: 120
     volumes:
-      - chamilo_data:/var/www/chamilo
-      - ./:/var/www/chamilo/public/plugin/ExeLearning
+      - chamilo_state:/data
+      - chamilo_config:/var/www/html/config
+      - chamilo_var:/var/www/html/var
+      - ./:/var/www/html/public/plugin/ExeLearning
       # Chamilo's classmap and subscriber finder scan public/plugin recursively:
       # hide our dev-only trees from them (PHPUnit in vendor/ would clash with
       # Chamilo's classes; the editor checkout contains PHP files; build/ holds
       # copies of the plugin's own classes).
-      - /var/www/chamilo/public/plugin/ExeLearning/vendor
-      - /var/www/chamilo/public/plugin/ExeLearning/node_modules
-      - /var/www/chamilo/public/plugin/ExeLearning/exelearning
-      # make package output: a stale copy of our own classes.
-      - /var/www/chamilo/public/plugin/ExeLearning/build
+      - /var/www/html/public/plugin/ExeLearning/vendor
+      - /var/www/html/public/plugin/ExeLearning/node_modules
+      - /var/www/html/public/plugin/ExeLearning/exelearning
+      - /var/www/html/public/plugin/ExeLearning/build
 
 volumes:
   db_data:
-  chamilo_data:
+  chamilo_state:
+  chamilo_config:
+  chamilo_var:

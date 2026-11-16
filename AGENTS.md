@@ -60,7 +60,7 @@ visibility. Files: `ExeLearning/c<course>/p<id>/<sha256>.elpx` and `.../<sha256>
 ## Local environment
 
 `make up` → Chamilo 3.0.2 at http://localhost:8080 with the plugin installed and enabled, users
-`admin/admin`, `teacher/teacher`, `student/student`, `outsider/outsider`, course `EXEDEMO` (id 3) and a
+`admin/admin-exelearning`, `teacher/teacher`, `student/student`, `outsider/outsider`, course `EXEDEMO` (id 3) and a
 sample package. `make build-editor` builds the editor (needs Bun). Details: `DEVELOPMENT.md`.
 
 ## Verification

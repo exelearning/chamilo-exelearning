@@ -87,7 +87,7 @@ class ExeLearningPlugin extends Plugin
             return;
         }
 
-        (new SchemaTool($em))->createSchema([$em->getClassMetadata(ExeLearningPackage::class)]);
+        $this->runOwnStatements((new SchemaTool($em))->getCreateSchemaSql([$em->getClassMetadata(ExeLearningPackage::class)]));
     }
 
     /**
@@ -97,7 +97,7 @@ class ExeLearningPlugin extends Plugin
     {
         $em = Database::getManager();
         if ($em->getConnection()->createSchemaManager()->tablesExist([self::TABLE_PACKAGE])) {
-            (new SchemaTool($em))->dropSchema([$em->getClassMetadata(ExeLearningPackage::class)]);
+            $this->runOwnStatements((new SchemaTool($em))->getDropSchemaSQL([$em->getClassMetadata(ExeLearningPackage::class)]));
         }
 
         $this->storage()->deleteTree(PackageStorage::ROOT);
@@ -370,6 +370,23 @@ class ExeLearningPlugin extends Plugin
         }
 
         return (0 === $unit ? (string) (int) $size : number_format($size, 1)).' '.$units[$unit];
+    }
+
+    /**
+     * Run only the statements that touch the plugin's table. Schema listeners
+     * can add unrelated tables to any generated schema (chamilo-lms master adds
+     * php_session): creating them fails, and dropping them would be destructive.
+     *
+     * @param list<string> $statements
+     */
+    private function runOwnStatements(array $statements): void
+    {
+        $connection = Database::getManager()->getConnection();
+        foreach ($statements as $sql) {
+            if (str_contains($sql, self::TABLE_PACKAGE)) {
+                $connection->executeStatement($sql);
+            }
+        }
     }
 
     private function assertSize(string $tmpPath): void

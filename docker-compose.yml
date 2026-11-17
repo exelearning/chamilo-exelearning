@@ -24,8 +24,8 @@ services:
     build:
       context: docker
       args:
-        CHAMILO_VERSION: ${CHAMILO_VERSION:-3.0.2-r1}
-    image: chamilo-exelearning-dev:${CHAMILO_VERSION:-3.0.2-r1}
+        CHAMILO_VERSION: ${CHAMILO_VERSION:-3.0.2}
+    image: chamilo-exelearning-dev:${CHAMILO_VERSION:-3.0.2}
     depends_on:
       db:
         condition: service_healthy

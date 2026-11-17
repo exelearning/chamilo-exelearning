@@ -6,7 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-## [0.1.0] - unreleased
+## [4.0.6]
+
+First release, bundling eXeLearning editor v4.0.6. Plugin releases follow the bundled editor version, as in the
+other eXeLearning integrations.
 
 ### Added
 - Course tool "eXeLearning" for Chamilo 3: list, upload, rename, show/hide, delete and download packages.

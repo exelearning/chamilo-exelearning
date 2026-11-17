@@ -99,9 +99,8 @@ jobs:
         run: make build-editor
       - name: Build and inspect the release ZIP
         run: |
-          version="$(php scripts/check-version.php --print)"
-          make package VERSION="$version"
-          make check-package VERSION="$version"
+          make package VERSION=0.0.0-rc.0
+          make check-package VERSION=0.0.0-rc.0
       - uses: actions/upload-artifact@v7
         with:
           name: package

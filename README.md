@@ -70,7 +70,7 @@ opened on its own). See [SECURITY.md](SECURITY.md).
 
 ## Learning paths and tracking
 
-Not in 0.1.0. Chamilo 3 has no extension point for plugin item types in learning paths. The planned route (export to SCORM 1.2
+Not in this first release. Chamilo 3 has no extension point for plugin item types in learning paths. The planned route (export to SCORM 1.2
 and import it as a native Chamilo learning path) is described in
 [the design document](docs/superpowers/specs/2026-11-16-chamilo-exelearning-design.md).
 

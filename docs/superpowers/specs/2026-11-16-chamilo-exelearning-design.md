@@ -369,3 +369,4 @@ Deviations from the brief:
 - Admin-side enabling is done by the seed, not clicked in E2E.
 - Chamilo `master` is not built or tested: by decision, only stable releases are supported. The CI matrix entry and the source build were removed.
 - The dev/CI image now extends the published `erseco/alpine-chamilo:3.0.2`, which took over the unattended install (ported from this repo's installer replay). `docker/` keeps only Composer and the boot-time `dump-autoload` for the mounted plugin.
+- Versioning (replaces decision 20): plugin releases follow the bundled editor version (`v4.0.6` ships editor `v4.0.6`), as in the siblings. The source keeps `0.0.0` and `make package` stamps the version; `release.yml` and `check-editor-releases.yml` publish the releases.

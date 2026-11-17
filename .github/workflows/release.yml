@@ -1,0 +1,163 @@
+---
+name: Release
+
+# Plugin releases follow the bundled editor version (v4.0.6 ships editor
+# v4.0.6), as in the other eXeLearning integrations. A plugin-only fix can ship
+# as a pre-release (v4.0.6-rc.1). The plugin version comes from the pushed tag
+# (or `release_tag`); the editor is built from the tag in `.editor-version`
+# unless the dispatch inputs override it.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Plugin version to publish, e.g. 4.0.6 or 4.0.6-rc.1 (the git tag is v<version>)"
+        required: true
+      editor_repo_url:
+        description: "Editor source repository URL"
+        required: false
+        default: "https://github.com/exelearning/exelearning.git"
+      editor_ref:
+        description: "Editor ref to bundle (branch or tag). Empty = the tag recorded in .editor-version"
+        required: false
+        default: ""
+      editor_ref_type:
+        description: "Type of editor ref"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - branch
+          - tag
+
+# Upstream editor code (bun install/build scripts) runs only in `build`, which
+# holds a read-only token. `publish` starts on a fresh runner, never executes
+# upstream code, and is the only job with write access.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag_name: ${{ steps.versions.outputs.TAG_NAME }}
+      release_tag: ${{ steps.versions.outputs.RELEASE_TAG }}
+      editor_ref: ${{ steps.versions.outputs.EXELEARNING_EDITOR_REF }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: zip
+          coverage: none
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Resolve plugin and editor versions
+        id: versions
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+          INPUT_EDITOR_REPO_URL: ${{ github.event.inputs.editor_repo_url }}
+          INPUT_EDITOR_REF: ${{ github.event.inputs.editor_ref }}
+          INPUT_EDITOR_REF_TYPE: ${{ github.event.inputs.editor_ref_type }}
+        run: |
+          if [ "$EVENT_NAME" = "push" ]; then
+            TAG_NAME="$GITHUB_REF_NAME"
+            EDITOR_REPO_URL="https://github.com/exelearning/exelearning.git"
+            EDITOR_REF=""
+            EDITOR_REF_TYPE="tag"
+          else
+            TAG_NAME="v${INPUT_RELEASE_TAG#v}"
+            EDITOR_REPO_URL="$INPUT_EDITOR_REPO_URL"
+            EDITOR_REF="$INPUT_EDITOR_REF"
+            EDITOR_REF_TYPE="$INPUT_EDITOR_REF_TYPE"
+          fi
+          if [ -z "$EDITOR_REF" ]; then
+            EDITOR_REF="$(tr -d '[:space:]' < .editor-version)"
+            EDITOR_REF_TYPE="tag"
+          fi
+          if [ -z "$EDITOR_REF" ]; then
+            echo "::error::.editor-version is empty and no editor_ref was given"
+            exit 1
+          fi
+          # make package validates the version format (X.Y.Z or X.Y.Z-(alpha|beta|rc).N).
+          php scripts/check-version.php "${TAG_NAME#v}"
+          echo "Plugin ${TAG_NAME#v} with editor ${EDITOR_REF} (${EDITOR_REF_TYPE}) from ${EDITOR_REPO_URL}"
+          {
+            echo "TAG_NAME=${TAG_NAME}"
+            echo "RELEASE_TAG=${TAG_NAME#v}"
+            echo "EXELEARNING_EDITOR_REPO_URL=${EDITOR_REPO_URL}"
+            echo "EXELEARNING_EDITOR_REF=${EDITOR_REF}"
+            echo "EXELEARNING_EDITOR_REF_TYPE=${EDITOR_REF_TYPE}"
+          } | tee -a "$GITHUB_ENV" >> "$GITHUB_OUTPUT"
+
+      - name: Build static editor
+        env:
+          APP_VERSION: ${{ env.EXELEARNING_EDITOR_REF }}
+        run: make build-editor
+
+      - name: Create and inspect the package
+        run: |
+          make package VERSION="${RELEASE_TAG}"
+          make check-package VERSION="${RELEASE_TAG}"
+
+      - name: Upload ZIP as workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ExeLearning-${{ env.RELEASE_TAG }}
+          path: |
+            build/ExeLearning-${{ env.RELEASE_TAG }}.zip
+            build/ExeLearning-${{ env.RELEASE_TAG }}.zip.sha256
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG_NAME: ${{ needs.build.outputs.tag_name }}
+      RELEASE_TAG: ${{ needs.build.outputs.release_tag }}
+      EXELEARNING_EDITOR_REF: ${{ needs.build.outputs.editor_ref }}
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v8
+        with:
+          name: ExeLearning-${{ needs.build.outputs.release_tag }}
+
+      - name: Publish/Update GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          target_commitish: ${{ github.sha }}
+          # A SemVer pre-release (4.0.6-rc.1) must not become the "latest" release.
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+          files: |
+            ExeLearning-${{ env.RELEASE_TAG }}.zip
+            ExeLearning-${{ env.RELEASE_TAG }}.zip.sha256
+          generate_release_notes: true
+          append_body: true
+          body: |
+
+            ---
+
+            Bundled eXeLearning editor: ${{ env.EXELEARNING_EDITOR_REF }}
+
+            Install: unpack into `public/plugin/` of Chamilo 3, run `composer dump-autoload` and `php bin/console cache:clear`, then enable *eXeLearning* in Administration → Plugins (see the README).
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

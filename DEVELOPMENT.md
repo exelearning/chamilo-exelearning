@@ -63,8 +63,21 @@ make test-js             # Vitest: editor bridge
 make test-integration    # inside the container: install, course/session/user deletion; ARGS=--uninstall
 make test-e2e            # Playwright against make up
 make check-untranslated  # lang/*.php against lang/en_US.php
-make package VERSION=0.1.0 && make check-package VERSION=0.1.0
+make package VERSION=4.0.6 && make check-package VERSION=4.0.6
 ```
+
+## Releases
+
+Plugin releases follow the bundled editor version, as in the other eXeLearning integrations: `v4.0.6` ships editor
+`v4.0.6`. The source keeps `ExeLearningPlugin::VERSION = '0.0.0'`; `make package VERSION=X.Y.Z` stamps the version into
+the packaged copy only, and `make check-package` verifies it.
+
+- **New editor release:** `check-editor-releases.yml` runs daily. When `exelearning/exelearning` publishes a new tag, it
+  builds the plugin with it, commits the new `.editor-version` and publishes the GitHub release `vX.Y.Z` with the ZIP and
+  its SHA-256.
+- **Plugin-only release:** push a tag (`git tag v4.0.6 && git push origin v4.0.6`), or run `release.yml` by hand with
+  `release_tag`. Use `X.Y.Z-rc.N` for a pre-release. The editor comes from `.editor-version` unless the dispatch inputs
+  override it.
 
 ## Layout
 

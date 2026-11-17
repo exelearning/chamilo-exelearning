@@ -7,9 +7,10 @@ declare(strict_types=1);
 /*
  * `make check-package VERSION=X.Y.Z`: inspect the release ZIP. It must unpack
  * to a single ExeLearning/ folder, contain the plugin and the built editor,
- * and none of the development-only trees.
+ * and none of the development-only trees, and carry the stamped VERSION.
  */
 $zipPath = $argv[1] ?? '';
+$expectedVersion = ltrim($argv[2] ?? '', 'v');
 $zip = new ZipArchive();
 if ('' === $zipPath || true !== $zip->open($zipPath, ZipArchive::RDONLY)) {
     fwrite(\STDERR, "Cannot open '$zipPath'.\n");
@@ -44,6 +45,10 @@ foreach (['.agents/', '.claude/', 'AGENTS.md', 'CLAUDE.md', 'tests/', 'docker/',
     if ($any('ExeLearning/'.$forbidden)) {
         $errors[] = "Must not ship: $forbidden";
     }
+}
+$class = (string) $zip->getFromName('ExeLearning/src/ExeLearningPlugin.php');
+if ('' !== $expectedVersion && !str_contains($class, "public const string VERSION = '{$expectedVersion}';")) {
+    $errors[] = "ExeLearningPlugin::VERSION is not stamped with {$expectedVersion}";
 }
 foreach (['app/', 'libs/'] as $dir) {
     if (!$any('ExeLearning/dist/static/'.$dir)) {

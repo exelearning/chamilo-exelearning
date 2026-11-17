@@ -24,7 +24,11 @@ use Doctrine\ORM\Tools\SchemaTool;
  */
 class ExeLearningPlugin extends Plugin
 {
-    public const string VERSION = '0.1.0';
+    /**
+     * Placeholder in the source tree: `make package VERSION=X.Y.Z` stamps the
+     * release version (the bundled editor's, e.g. 4.0.6) into the packaged copy.
+     */
+    public const string VERSION = '0.0.0';
     public const string TABLE_PACKAGE = 'plugin_exelearning_package';
 
     /**

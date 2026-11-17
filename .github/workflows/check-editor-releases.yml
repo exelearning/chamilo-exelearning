@@ -1,0 +1,157 @@
+---
+name: Check Editor Releases
+
+# Daily: when exelearning/exelearning publishes a new release, build the plugin
+# with it, record it in .editor-version and publish the plugin release with the
+# same version (editor v4.0.7 → plugin v4.0.7).
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # Daily at 8:00 UTC
+  workflow_dispatch:
+
+# Upstream editor code (bun install/build scripts) runs only in `build`, which
+# holds a read-only token. `publish` starts on a fresh runner, never executes
+# upstream code, and is the only job with write access.
+permissions:
+  contents: read
+
+concurrency:
+  group: check-editor-releases
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      found: ${{ steps.check.outputs.found }}
+      tag: ${{ steps.check.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Get latest exelearning release
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST=$(gh api repos/exelearning/exelearning/releases/latest --jq '.tag_name' 2>/dev/null || echo "")
+          if [ -z "$LATEST" ]; then
+            echo "No release found"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Latest editor release: $LATEST"
+          # The tag comes from another repository: accept only a plain version
+          # tag before it reaches make, sed, git or the release body.
+          if ! printf '%s' "$LATEST" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.?[0-9]+)?$'; then
+            echo "::error::Refusing unexpected editor tag format"
+            exit 1
+          fi
+          echo "tag=$LATEST" >> "$GITHUB_OUTPUT"
+
+          CURRENT="$(tr -d '[:space:]' < .editor-version 2>/dev/null || true)"
+          echo "Current editor version: $CURRENT"
+          if [ "$LATEST" = "$CURRENT" ]; then
+            echo "Already up to date"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New version available"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute version
+        if: steps.check.outputs.found == 'true'
+        id: version
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: shivammathur/setup-php@v2
+        if: steps.check.outputs.found == 'true'
+        with:
+          php-version: '8.3'
+          extensions: zip
+          coverage: none
+
+      - name: Setup Bun
+        if: steps.check.outputs.found == 'true'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Build static editor
+        if: steps.check.outputs.found == 'true'
+        env:
+          EXELEARNING_EDITOR_REPO_URL: https://github.com/exelearning/exelearning.git
+          EXELEARNING_EDITOR_REF: ${{ steps.check.outputs.tag }}
+          EXELEARNING_EDITOR_REF_TYPE: tag
+          APP_VERSION: ${{ steps.check.outputs.tag }}
+        run: make build-editor
+
+      - name: Create and inspect the package
+        if: steps.check.outputs.found == 'true'
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "$TAG" > .editor-version
+          make package VERSION="$VERSION"
+          make check-package VERSION="$VERSION"
+
+      - name: Upload package
+        if: steps.check.outputs.found == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: plugin-package
+          path: |
+            build/ExeLearning-${{ steps.version.outputs.version }}.zip
+            build/ExeLearning-${{ steps.version.outputs.version }}.zip.sha256
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: needs.build.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download package
+        uses: actions/download-artifact@v8
+        with:
+          name: plugin-package
+
+      - name: Update editor version marker
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$TAG" > .editor-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .editor-version
+          git commit -m "Update editor version to $TAG"
+          gh auth setup-git
+          git push
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.build.outputs.tag }}
+          name: "${{ needs.build.outputs.tag }}"
+          prerelease: ${{ contains(needs.build.outputs.version, '-') }}
+          body: |
+            Automated build with eXeLearning editor ${{ needs.build.outputs.tag }}.
+
+            Install: unpack into `public/plugin/` of Chamilo 3, run `composer dump-autoload` and `php bin/console cache:clear`, then enable *eXeLearning* in Administration → Plugins (see the README).
+          files: |
+            ExeLearning-${{ needs.build.outputs.version }}.zip
+            ExeLearning-${{ needs.build.outputs.version }}.zip.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

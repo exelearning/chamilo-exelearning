@@ -72,7 +72,7 @@ sample package. `make build-editor` builds the editor (needs Bun). Details: `DEV
 | `resources/js/` | `make test-js`, `make lint` |
 | pages, entity, subscriber, install | `make up`, `make test-integration`, `make test-e2e` |
 | strings | `make check-untranslated` |
-| packaging | `make package VERSION=X.Y.Z && make check-package VERSION=X.Y.Z` |
+| packaging | `make package VERSION=X.Y.Z && make check-package VERSION=X.Y.Z` (source keeps `VERSION = '0.0.0'`; releases follow the editor version, see `DEVELOPMENT.md`) |
 | workflows | `actionlint` |
 
 Report what you ran and its output. A check you skipped is reported as skipped.

@@ -5,40 +5,30 @@
 declare(strict_types=1);
 
 /*
- * `make check-version [VERSION=X.Y.Z]`: the version lives in
- * ExeLearningPlugin::VERSION (plugin.php reads it through get_info()) and must
- * have a CHANGELOG.md entry. With an argument, it must also equal it.
- * `--print` only prints the version.
+ * `make check-version [VERSION=X.Y.Z]`.
+ *
+ * As in the sibling integrations, the source tree carries version 0.0.0 and
+ * `make package VERSION=...` stamps the release version into the packaged copy
+ * only. This checks that the placeholder is intact and, when given, that
+ * VERSION is X.Y.Z or X.Y.Z-(alpha|beta|rc).N.
  */
-$root = dirname(__DIR__);
-$source = (string) file_get_contents($root.'/src/ExeLearningPlugin.php');
+$source = (string) file_get_contents(dirname(__DIR__).'/src/ExeLearningPlugin.php');
 if (1 !== preg_match("/public const string VERSION = '([^']+)';/", $source, $m)) {
     fwrite(\STDERR, "ExeLearningPlugin::VERSION not found.\n");
 
     exit(1);
 }
-$version = $m[1];
-if ('--print' === ($argv[1] ?? '')) {
-    echo $version;
-
-    exit(0);
-}
-$errors = [];
-
-if (1 !== preg_match('/^\d+\.\d+\.\d+$/', $version)) {
-    $errors[] = "VERSION '$version' is not X.Y.Z.";
-}
-$expected = $argv[1] ?? '';
-if ('' !== $expected && ltrim($expected, 'v') !== $version) {
-    $errors[] = "VERSION is '$version' but '$expected' was requested.";
-}
-if (!str_contains((string) @file_get_contents($root.'/CHANGELOG.md'), '## ['.$version.']')) {
-    $errors[] = "CHANGELOG.md has no '## [$version]' section.";
-}
-
-if ([] !== $errors) {
-    fwrite(\STDERR, implode("\n", $errors)."\n");
+if ('0.0.0' !== $m[1]) {
+    fwrite(\STDERR, "ExeLearningPlugin::VERSION is '{$m[1]}'; the source must keep 0.0.0 (make package stamps the release version).\n");
 
     exit(1);
 }
-fwrite(\STDOUT, "Version $version is consistent.\n");
+
+$version = ltrim($argv[1] ?? '', 'v');
+if ('' !== $version && 1 !== preg_match('/^\d+\.\d+\.\d+(-(alpha|beta|rc)\.?\d+)?$/', $version)) {
+    fwrite(\STDERR, "VERSION '$version' must be X.Y.Z or X.Y.Z-(alpha|beta|rc).N.\n");
+
+    exit(1);
+}
+
+fwrite(\STDOUT, '' === $version ? "Source version placeholder OK.\n" : "Version $version OK.\n");

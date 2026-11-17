@@ -203,18 +203,21 @@ architecture-check: ## Validate the architecture records
 
 # --- Release -----------------------------------------------------------------
 
-check-version: ## Check that plugin.php, the plugin class and CHANGELOG agree (VERSION=X.Y.Z optional)
+check-version: ## Check the 0.0.0 source placeholder and, if given, the VERSION format
 	@php scripts/check-version.php $(VERSION)
 
-package: ## Build build/ExeLearning-$(VERSION).zip (VERSION=X.Y.Z required)
+package: ## Build build/ExeLearning-$(VERSION).zip, stamping VERSION into the packaged copy (VERSION=X.Y.Z required)
 	@if [ -z "$(VERSION)" ]; then echo "Usage: make package VERSION=X.Y.Z"; exit 1; fi
-	@echo "$(VERSION)" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$$' || { echo "VERSION must be X.Y.Z"; exit 1; }
 	@php scripts/check-version.php $(VERSION)
+	@test -s .editor-version || { echo ".editor-version is missing or empty"; exit 1; }
 	@test -f dist/static/index.html || { echo "dist/static/ missing: run make build-editor"; exit 1; }
 	@cp .editor-version dist/static/.editor-version
 	rm -rf $(PACKAGE_DIR)/$(PLUGIN_NAME) $(PACKAGE_DIR)/$(PLUGIN_NAME)-$(VERSION).zip
 	mkdir -p $(PACKAGE_DIR)/$(PLUGIN_NAME)
 	rsync -a --exclude-from=.distignore ./ $(PACKAGE_DIR)/$(PLUGIN_NAME)/
+	@# Stamp the release version into the staged copy only: the source keeps 0.0.0.
+	sed -i.bak "s/public const string VERSION = '0.0.0';/public const string VERSION = '$(VERSION)';/" $(PACKAGE_DIR)/$(PLUGIN_NAME)/src/ExeLearningPlugin.php
+	rm $(PACKAGE_DIR)/$(PLUGIN_NAME)/src/ExeLearningPlugin.php.bak
 	cd $(PACKAGE_DIR) && zip -qr $(PLUGIN_NAME)-$(VERSION).zip $(PLUGIN_NAME)
 	cd $(PACKAGE_DIR) && shasum -a 256 $(PLUGIN_NAME)-$(VERSION).zip > $(PLUGIN_NAME)-$(VERSION).zip.sha256
 	@# Never leave the staging copy: the repository is mounted under public/plugin
@@ -223,4 +226,4 @@ package: ## Build build/ExeLearning-$(VERSION).zip (VERSION=X.Y.Z required)
 	@echo "Built $(PACKAGE_DIR)/$(PLUGIN_NAME)-$(VERSION).zip"
 
 check-package: ## Inspect the built ZIP (VERSION=X.Y.Z required)
-	@php scripts/check-package.php $(PACKAGE_DIR)/$(PLUGIN_NAME)-$(VERSION).zip
+	@php scripts/check-package.php $(PACKAGE_DIR)/$(PLUGIN_NAME)-$(VERSION).zip $(VERSION)
